@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="花費記錄">
+<title>花費記錄</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #2e2e2e;
+    --text: #f0f0f0;
+    --text-dim: #888;
+    --personal: #7eb8f7;
+    --business: #f7c97e;
+    --red: #f77e7e;
+    --green: #7ef7a8;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding-bottom: 100px;
+  }
+
+  /* Header */
+  .header {
+    padding: 56px 20px 20px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  .header h1 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .week-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .week-nav button {
+    background: var(--surface2);
+    border: none;
+    color: var(--text);
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .week-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+    min-width: 90px;
+    text-align: center;
+  }
+
+  /* Budget bars */
+  .budget-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .budget-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+  .budget-card .bc-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .budget-card .bc-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .bc-amount.personal { color: var(--personal); }
+  .bc-amount.business { color: var(--business); }
+  .bc-amount.over { color: var(--red); }
+  .budget-bar {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .budget-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .budget-bar-fill.personal { background: var(--personal); }
+  .budget-bar-fill.business { background: var(--business); }
+  .budget-bar-fill.over { background: var(--red); }
+  .bc-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 5px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    padding: 16px 20px 0;
+    gap: 8px;
+  }
+  .tab {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  /* Add expense form */
+  .add-form {
+    padding: 16px 20px;
+  }
+  .form-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 16px;
+  }
+  .form-row {
+    margin-bottom: 12px;
+  }
+  .form-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .amount-input {
+    display: flex;
+    align-items: center;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+  }
+  .amount-input span {
+    font-family: 'DM Mono', monospace;
+    color: var(--text-dim);
+    font-size: 18px;
+    margin-right: 6px;
+  }
+  .amount-input input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 24px;
+    font-family: 'DM Mono', monospace;
+    padding: 12px 0;
+    outline: none;
+    width: 100%;
+  }
+  .note-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+  }
+  .note-input::placeholder { color: var(--text-dim); }
+
+  /* Category pills */
+  .cat-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .cat-pill {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cat-pill.active-personal {
+    background: rgba(126,184,247,0.15);
+    border-color: var(--personal);
+    color: var(--personal);
+  }
+  .cat-pill.active-business {
+    background: rgba(247,201,126,0.15);
+    border-color: var(--business);
+    color: var(--business);
+  }
+
+  /* Type toggle */
+  .type-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .type-btn {
+    padding: 9px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  .type-btn.active-personal {
+    background: var(--personal);
+    color: #0f0f0f;
+  }
+  .type-btn.active-business {
+    background: var(--business);
+    color: #0f0f0f;
+  }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: 4px;
+  }
+  .submit-btn.personal { background: var(--personal); color: #0f0f0f; }
+  .submit-btn.business { background: var(--business); color: #0f0f0f; }
+  .submit-btn:active { opacity: 0.8; }
+
+  /* Transaction list */
+  .tx-list {
+    padding: 0 20px;
+  }
+  .tx-date-group { margin-bottom: 20px; }
+  .tx-date-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    font-family: 'DM Mono', monospace;
+  }
+  .tx-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    margin-bottom: 6px;
+    border: 1px solid var(--border);
+    gap: 12px;
+  }
+  .tx-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .tx-dot.personal { background: var(--personal); }
+  .tx-dot.business { background: var(--business); }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-note {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tx-cat {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .tx-right { text-align: right; flex-shrink: 0; }
+  .tx-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .tx-amount.personal { color: var(--personal); }
+  .tx-amount.business { color: var(--business); }
+  .tx-delete {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .tx-delete:active { color: var(--red); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    background: rgba(15,15,15,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 10px 20px 28px;
+    gap: 8px;
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+  }
+  .nav-btn.active { color: var(--text); }
+  .nav-icon { font-size: 20px; }
+
+  /* Budget settings */
+  .settings-form {
+    padding: 16px 20px;
+  }
+  .settings-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .settings-card h3 {
+    font-size: 13px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+  }
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-size: 14px; }
+  .setting-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'DM Mono', monospace;
+    width: 100px;
+    text-align: right;
+    outline: none;
+  }
+  .save-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    border: 1px solid var(--border);
+  }
+  .save-btn:active { opacity: 0.8; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-size: 13px;
+    color: var(--text);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+
+  .week-summary {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0 0;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>花費記錄</h1>
+    </div>
+    <div class="week-nav">
+      <button onclick="changeWeek(-1)">‹</button>
+      <span class="week-label" id="weekLabel"></span>
+      <button onclick="changeWeek(1)">›</button>
+    </div>
+  </div>
+  <div class="budget-cards">
+    <div class="budget-card">
+      <div class="bc-label">個人預算</div>
+      <div class="bc-amount personal" id="personalRemain">$0</div>
+      <div class="budget-bar">
+        <div class="budget-bar-fill personal" id="personalBar" style="width:0%"></div>
+      </div>
+      <div class="bc-sub" id="personalSub">剩餘 / $0</div>
+    </div>
+    <div class="budget-card">
+      <div class="bc-label">OhMyMy 預算</div>
+      <div class="bc-amount business" id="businessRemain">$0</div>
+      <div class="budget-bar">
+        <div class="budget-bar-fill business" id="businessBar" style="width:0%"></div>
+      </div>
+      <div class="bc-sub" id="businessSub">剩餘 / $0</div>
+    </div>
+  </div>
+</div>
+
+<div id="page-add" class="page">
+  <div class="add-form">
+    <div class="form-card">
+      <div class="form-row">
+        <div class="form-label">類型</div>
+        <div class="type-toggle">
+          <button class="type-btn active-personal" id="typePersonal" onclick="setType('personal')">👤 個人</button>
+          <button class="type-btn" id="typeBusiness" onclick="setType('business')">🏪 OhMyMy</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-label">金額</div>
+        <div class="amount-input">
+          <span>$</span>
+          <input type="number" id="amountInput" placeholder="0.00" inputmode="decimal" step="0.01">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-label">備註</div>
+        <input type="text" class="note-input" id="noteInput" placeholder="買了什麼？">
+      </div>
+      <div class="form-row">
+        <div class="form-label">分類</div>
+        <div class="cat-pills" id="catPills"></div>
+      </div>
+      <button class="submit-btn personal" id="submitBtn" onclick="addExpense()">記錄支出</button>
+    </div>
+  </div>
+</div>
+
+<div id="page-list" class="page" style="display:none">
+  <div class="tabs">
+    <button class="tab active" onclick="filterTx('all', this)">全部</button>
+    <button class="tab" onclick="filterTx('personal', this)">個人</button>
+    <button class="tab" onclick="filterTx('business', this)">OhMyMy</button>
+  </div>
+  <div class="tx-list" id="txList" style="padding-top:16px"></div>
+</div>
+
+<div id="page-settings" class="page" style="display:none">
+  <div class="settings-form">
+    <div class="settings-card">
+      <h3>每週預算</h3>
+      <div class="setting-row">
+        <span class="setting-label">👤 個人預算</span>
+        <input type="number" class="setting-input" id="setBudgetPersonal" placeholder="150">
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">🏪 OhMyMy 預算</span>
+        <input type="number" class="setting-input" id="setBudgetBusiness" placeholder="150">
+      </div>
+    </div>
+    <div class="settings-card">
+      <h3>個人分類</h3>
+      <div id="personalCatList"></div>
+      <div class="setting-row" style="padding-top:10px;border-bottom:none;">
+        <input type="text" class="setting-input" id="newPersonalCat" placeholder="新增分類" style="width:100%;text-align:left;">
+      </div>
+      <button class="save-btn" style="margin-top:8px" onclick="addCat('personal')">＋ 新增個人分類</button>
+    </div>
+    <div class="settings-card">
+      <h3>OhMyMy 分類</h3>
+      <div id="businessCatList"></div>
+      <div class="setting-row" style="padding-top:10px;border-bottom:none;">
+        <input type="text" class="setting-input" id="newBusinessCat" placeholder="新增分類" style="width:100%;text-align:left;">
+      </div>
+      <button class="save-btn" style="margin-top:8px" onclick="addCat('business')">＋ 新增OhMyMy分類</button>
+    </div>
+    <button class="save-btn" onclick="saveSettings()">💾 儲存設定</button>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-btn active" id="nav-add" onclick="showPage('add')">
+    <span class="nav-icon">＋</span>
+    <span>記錄</span>
+  </button>
+  <button class="nav-btn" id="nav-list" onclick="showPage('list')">
+    <span class="nav-icon">📋</span>
+    <span>明細</span>
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="showPage('settings')">
+    <span class="nav-icon">⚙️</span>
+    <span>設定</span>
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+let state = JSON.parse(localStorage.getItem('expenseTracker') || 'null') || {
+  budgets: { personal: 150, business: 150 },
+  categories: {
+    personal: ['食物', '油', '雜項', '藥妝', '交通'],
+    business: ['材料', '包裝', '設備', '其他生意']
+  },
+  transactions: [],
+  weekOffset: 0
+};
+
+let currentType = 'personal';
+let currentCat = '';
+let txFilter = 'all';
+
+function save() {
+  localStorage.setItem('expenseTracker', JSON.stringify(state));
+}
+
+// ── Week helpers ───────────────────────────────────────
+function getWeekDates(offset = 0) {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  return { start: monday, end: sunday };
+}
+
+function formatDate(d) {
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function isInWeek(ts, offset) {
+  const { start, end } = getWeekDates(offset);
+  return ts >= start.getTime() && ts <= end.getTime();
+}
+
+function changeWeek(dir) {
+  state.weekOffset += dir;
+  save();
+  render();
+}
+
+// ── Type & category ────────────────────────────────────
+function setType(type) {
+  currentType = type;
+  currentCat = '';
+  document.getElementById('typePersonal').className = 'type-btn' + (type === 'personal' ? ' active-personal' : '');
+  document.getElementById('typeBusiness').className = 'type-btn' + (type === 'business' ? ' active-business' : '');
+  document.getElementById('submitBtn').className = `submit-btn ${type}`;
+  renderCatPills();
+}
+
+function renderCatPills() {
+  const cats = state.categories[currentType];
+  const container = document.getElementById('catPills');
+  container.innerHTML = cats.map(c => `
+    <button class="cat-pill ${currentCat === c ? 'active-' + currentType : ''}"
+      onclick="selectCat('${c}')">${c}</button>
+  `).join('');
+}
+
+function selectCat(cat) {
+  currentCat = currentCat === cat ? '' : cat;
+  renderCatPills();
+}
+
+// ── Add expense ────────────────────────────────────────
+function addExpense() {
+  const amount = parseFloat(document.getElementById('amountInput').value);
+  const note = document.getElementById('noteInput').value.trim();
+  if (!amount || amount <= 0) { showToast('請輸入金額'); return; }
+
+  state.transactions.push({
+    id: Date.now(),
+    type: currentType,
+    amount,
+    note: note || (currentCat || '支出'),
+    category: currentCat,
+    date: Date.now()
+  });
+
+  document.getElementById('amountInput').value = '';
+  document.getElementById('noteInput').value = '';
+  currentCat = '';
+  save();
+  render();
+  showToast('✓ 已記錄 $' + amount.toFixed(2));
+}
+
+// ── Render ─────────────────────────────────────────────
+function render() {
+  const { start, end } = getWeekDates(state.weekOffset);
+  const isCurrentWeek = state.weekOffset === 0;
+  document.getElementById('weekLabel').textContent =
+    isCurrentWeek ? '本週' : `${formatDate(start)}–${formatDate(end)}`;
+
+  // Budget summary
+  const weekTx = state.transactions.filter(t => isInWeek(t.date, state.weekOffset));
+  const spentPersonal = weekTx.filter(t => t.type === 'personal').reduce((s, t) => s + t.amount, 0);
+  const spentBusiness = weekTx.filter(t => t.type === 'business').reduce((s, t) => s + t.amount, 0);
+  const bP = state.budgets.personal;
+  const bB = state.budgets.business;
+  const remP = bP - spentPersonal;
+  const remB = bB - spentBusiness;
+
+  const pEl = document.getElementById('personalRemain');
+  pEl.textContent = '$' + Math.abs(remP).toFixed(0);
+  pEl.className = 'bc-amount ' + (remP < 0 ? 'over' : 'personal');
+  document.getElementById('personalBar').style.width = Math.min(100, (spentPersonal / bP) * 100) + '%';
+  document.getElementById('personalBar').className = 'budget-bar-fill ' + (remP < 0 ? 'over' : 'personal');
+  document.getElementById('personalSub').textContent = (remP < 0 ? '超支 ' : '剩餘 ') + `$${Math.abs(remP).toFixed(0)} / $${bP}`;
+
+  const bEl = document.getElementById('businessRemain');
+  bEl.textContent = '$' + Math.abs(remB).toFixed(0);
+  bEl.className = 'bc-amount ' + (remB < 0 ? 'over' : 'business');
+  document.getElementById('businessBar').style.width = Math.min(100, (spentBusiness / bB) * 100) + '%';
+  document.getElementById('businessBar').className = 'budget-bar-fill ' + (remB < 0 ? 'over' : 'business');
+  document.getElementById('businessSub').textContent = (remB < 0 ? '超支 ' : '剩餘 ') + `$${Math.abs(remB).toFixed(0)} / $${bB}`;
+
+  renderCatPills();
+  renderTxList();
+  renderSettings();
+}
+
+function renderTxList() {
+  const weekTx = state.transactions
+    .filter(t => isInWeek(t.date, state.weekOffset))
+    .filter(t => txFilter === 'all' || t.type === txFilter)
+    .sort((a, b) => b.date - a.date);
+
+  const container = document.getElementById('txList');
+  if (weekTx.length === 0) {
+    container.innerHTML = '<div class="empty-state">這週還沒有記錄 ✨</div>';
+    return;
+  }
+
+  // Group by date
+  const groups = {};
+  weekTx.forEach(t => {
+    const d = new Date(t.date);
+    const key = `${d.getMonth() + 1}月${d.getDate()}日`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  container.innerHTML = Object.entries(groups).map(([date, txs]) => `
+    <div class="tx-date-group">
+      <div class="tx-date-label">${date}</div>
+      ${txs.map(t => `
+        <div class="tx-item">
+          <div class="tx-dot ${t.type}"></div>
+          <div class="tx-info">
+            <div class="tx-note">${t.note}</div>
+            <div class="tx-cat">${t.type === 'personal' ? '👤 個人' : '🏪 OhMyMy'}${t.category ? ' · ' + t.category : ''}</div>
+          </div>
+          <div class="tx-right">
+            <div class="tx-amount ${t.type}">$${t.amount.toFixed(2)}</div>
+          </div>
+          <button class="tx-delete" onclick="deleteExpense(${t.id})">×</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function renderSettings() {
+  document.getElementById('setBudgetPersonal').value = state.budgets.personal;
+  document.getElementById('setBudgetBusiness').value = state.budgets.business;
+
+  ['personal', 'business'].forEach(type => {
+    const el = document.getElementById(type + 'CatList');
+    el.innerHTML = state.categories[type].map(c => `
+      <div class="setting-row">
+        <span class="setting-label">${c}</span>
+        <button onclick="removeCat('${type}','${c}')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;">×</button>
+      </div>
+    `).join('');
+  });
+}
+
+// ── CRUD ───────────────────────────────────────────────
+function deleteExpense(id) {
+  state.transactions = state.transactions.filter(t => t.id !== id);
+  save();
+  render();
+  showToast('已刪除');
+}
+
+function addCat(type) {
+  const input = document.getElementById('new' + (type === 'personal' ? 'Personal' : 'Business') + 'Cat');
+  const val = input.value.trim();
+  if (!val) return;
+  if (!state.categories[type].includes(val)) {
+    state.categories[type].push(val);
+    save();
+    render();
+  }
+  input.value = '';
+}
+
+function removeCat(type, cat) {
+  state.categories[type] = state.categories[type].filter(c => c !== cat);
+  save();
+  render();
+}
+
+function saveSettings() {
+  const p = parseFloat(document.getElementById('setBudgetPersonal').value);
+  const b = parseFloat(document.getElementById('setBudgetBusiness').value);
+  if (p > 0) state.budgets.personal = p;
+  if (b > 0) state.budgets.business = b;
+  save();
+  render();
+  showToast('✓ 設定已儲存');
+}
+
+// ── Navigation ─────────────────────────────────────────
+function showPage(page) {
+  ['add', 'list', 'settings'].forEach(p => {
+    document.getElementById('page-' + p).style.display = p === page ? 'block' : 'none';
+    document.getElementById('nav-' + p).classList.toggle('active', p === page);
+  });
+  if (page === 'list') renderTxList();
+}
+
+function filterTx(filter, btn) {
+  txFilter = filter;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderTxList();
+}
+
+// ── Toast ──────────────────────────────────────────────
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ── Init ───────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
